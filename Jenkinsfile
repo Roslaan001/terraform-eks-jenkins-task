@@ -1,4 +1,4 @@
-Pipeline any {
+Pipeline {
     agent any
     environment {
         AWS_ACCESS_KEY_ID = credentials('jenkins_aws_access_key_id')
