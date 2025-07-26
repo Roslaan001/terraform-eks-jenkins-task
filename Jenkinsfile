@@ -3,36 +3,48 @@ pipeline {
     environment {
         AWS_ACCESS_KEY_ID = credentials('jenkins_aws_access_key_id')
         AWS_SECRET_ACCESS_KEY = credentials('jenkins_aws_secret_access_key')
+        AWS_DEFAULT_REGION = 'us-east-1'
+        CLUSTER_NAME = 'my-eks-cluster-task'
+        PRINCIPAL_ARN = 'arn:aws:iam::381492075201:user/Roslaan01'
     }
-
     stages {
         stage('Provisioning of cluster') {
             environment {
                 TF_VAR_env_prefix = "dev"
-                TF_VAR_private_subnets = '["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]'
-                TF_VAR_public_subnets = '["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]'
                 TF_VAR_vpc_cidr = "10.0.0.0/16"
             }
             steps {
                 script {
                     echo "Creating your EKS cluster"
                     sh "terraform init"
-                    sh ""
-                    // Add this before terraform apply if you want to start fresh
-                    sh "terraform state rm 'module.eks.aws_eks_access_entry.this[\"cluster_creator\"]' || true"
-                    sh "terraform apply -auto-approve"
-
-
-
+                    
+                    // Try terraform apply, if it fails due to access entry conflict, handle it
+                    def applyResult = sh(
+                        script: "terraform apply -auto-approve",
+                        returnStatus: true
+                    )
+                    
+                    if (applyResult != 0) {
+                        echo "Terraform apply failed, checking if it's due to access entry conflict..."
+                        
+                        // Import the access entry and retry
+                        echo "Importing existing access entry..."
+                        sh "terraform import 'module.eks.aws_eks_access_entry.this[\"cluster_creator\"]' '${CLUSTER_NAME}:${PRINCIPAL_ARN}'"
+                        
+                        echo "Retrying terraform apply..."
+                        sh "terraform apply -auto-approve"
+                    }
+                    
+                    // Get cluster endpoint
                     env.K8S_CLUSTER_URL = sh(
                         script: "terraform output cluster_url",
                         returnStdout: true
                     ).trim()
-
-                    sh "aws eks update-kubeconfig --name my-eks-cluster-task --region us-east-1"
+                    
+                    // Update kubeconfig
+                    sh "aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${AWS_DEFAULT_REGION}"
                 }
-               
             }
+        }
+    }
 }
-}
- }
