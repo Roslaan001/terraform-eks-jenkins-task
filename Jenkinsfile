@@ -17,8 +17,10 @@ pipeline {
                 script {
                     echo "Creating your EKS cluster"
                     sh "terraform init"
+                    sh ""
+                    // Add this before terraform apply if you want to start fresh
+                    sh "terraform state rm 'module.eks.aws_eks_access_entry.this[\"cluster_creator\"]' || true"
                     sh "terraform apply -auto-approve"
-                    sh "terraform import 'module.eks.aws_eks_access_entry.this["cluster_creator"]' 'my-eks-cluster-task:arn:aws:iam::381492075201:user/Roslaan01'"
 
 
 
