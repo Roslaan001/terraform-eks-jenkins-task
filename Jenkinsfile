@@ -11,7 +11,7 @@ pipeline {
                 TF_VAR_env_prefix = "dev"
                 TF_VAR_private_subnets = '["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]'
                 TF_VAR_public_subnets = '["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]'
-                TF_VAR_cidr_block = "10.0.0.0/16"
+                TF_VAR_vpc_cidr = "10.0.0.0/16"
             }
             steps {
                 script {
