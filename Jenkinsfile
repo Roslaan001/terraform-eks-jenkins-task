@@ -18,6 +18,8 @@ pipeline {
                     echo "Creating your EKS cluster"
                     sh "terraform init"
                     sh "terraform apply -auto-approve"
+                    sh "terraform import 'module.eks.aws_eks_access_entry.this["cluster_creator"]' 'my-eks-cluster-task:arn:aws:iam::381492075201:user/Roslaan01'"
+
 
 
                     env.K8S_CLUSTER_URL = sh(
